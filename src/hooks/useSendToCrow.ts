@@ -1,18 +1,21 @@
 "use client";
 
 import { useCallback } from "react";
-import { sendToCrowMock } from "@/services/crow-mock";
+import { getCrowAdapter } from "@/crow";
 
 /**
- * Send-to-Crow hook. Phase E will replace the mock with the real Crow adapter
- * (adapter.send(text), adapter.isAvailable()).
+ * Send-to-Crow hook. Uses Crow adapter (SDK or DOM); VoicePanel Send calls send(editedTranscript).
  */
 export function useSendToCrow() {
-  const send = useCallback((text: string) => {
-    sendToCrowMock(text);
-  }, []);
+  const adapter = getCrowAdapter();
+  const isAvailable = adapter.isAvailable();
 
-  const isAvailable = true;
+  const send = useCallback((text: string) => {
+    const current = getCrowAdapter();
+    if (current.isAvailable()) {
+      current.send(text);
+    }
+  }, []);
 
   return { send, isAvailable };
 }
