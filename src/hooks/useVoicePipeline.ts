@@ -6,8 +6,10 @@ import { createDeepgramClient } from "@/deepgram";
 import type { DeepgramTranscriptResult, DeepgramClientError } from "@/deepgram";
 
 export interface UseVoicePipelineOptions {
-  /** Deepgram API key. If not set, recording works but no STT (no onChunk to Deepgram). */
+  /** Deepgram API key. If not set, use tokenUrl (or default) for a short-lived token. */
   apiKey?: string;
+  /** URL to fetch a short-lived Deepgram access token (JSON with access_token). Used when apiKey is not set. */
+  tokenUrl?: string;
   /** Called for each transcript event (partial and final). */
   onTranscript?: (result: DeepgramTranscriptResult) => void;
   /** Called on STT/connection error. */
@@ -16,12 +18,13 @@ export interface UseVoicePipelineOptions {
 
 /**
  * Composes recording state with Deepgram streaming STT.
- * When apiKey is set and recording starts, opens a Deepgram connection and forwards
- * audio chunks; when recording stops, closes the connection.
+ * When apiKey or tokenUrl is set and recording starts, opens a Deepgram connection
+ * (fetching a token from tokenUrl when no apiKey) and forwards audio chunks;
+ * when recording stops, closes the connection.
  * Transcript events are passed to onTranscript for the transcript manager / UI.
  */
 export function useVoicePipeline(options: UseVoicePipelineOptions = {}) {
-  const { apiKey, onTranscript, onError } = options;
+  const { apiKey, tokenUrl, onTranscript, onError } = options;
   const handleRef = useRef<ReturnType<ReturnType<typeof createDeepgramClient>["startListening"]> | null>(null);
   const onTranscriptRef = useRef(onTranscript);
   const onErrorRef = useRef(onError);
@@ -32,12 +35,13 @@ export function useVoicePipeline(options: UseVoicePipelineOptions = {}) {
     handleRef.current?.send(chunk);
   };
 
+  const hasCredential = Boolean(apiKey || tokenUrl);
   const recording = useRecordingState(
-    apiKey ? { onChunk } : {}
+    hasCredential ? { onChunk } : {}
   );
 
   useEffect(() => {
-    if (!apiKey || !recording.isRecording) {
+    if (!hasCredential || !recording.isRecording) {
       if (handleRef.current) {
         const handle = handleRef.current;
         handleRef.current = null;
@@ -50,19 +54,63 @@ export function useVoicePipeline(options: UseVoicePipelineOptions = {}) {
       return;
     }
 
-    const client = createDeepgramClient({
-      apiKey,
-      onTranscript: (result) => onTranscriptRef.current?.(result),
-      onError: (err) => onErrorRef.current?.(err),
-    });
-    handleRef.current = client.startListening();
+    if (apiKey) {
+      const client = createDeepgramClient({
+        apiKey,
+        onTranscript: (result) => onTranscriptRef.current?.(result),
+        onError: (err) => onErrorRef.current?.(err),
+      });
+      handleRef.current = client.startListening();
+      return () => {
+        const handle = handleRef.current;
+        handleRef.current = null;
+        handle?.stop();
+      };
+    }
+
+    if (!tokenUrl) return;
+
+    let cancelled = false;
+    fetch(tokenUrl)
+      .then((res) => {
+        if (cancelled) return null;
+        if (!res.ok) {
+          throw new Error(`Token request failed: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data: { access_token?: string }) => {
+        if (cancelled) return;
+        const access_token = data?.access_token;
+        if (typeof access_token !== "string") {
+          onErrorRef.current?.({
+            code: "unknown",
+            message: "Failed to get speech token",
+          });
+          return;
+        }
+        const client = createDeepgramClient({
+          accessToken: access_token,
+          onTranscript: (result) => onTranscriptRef.current?.(result),
+          onError: (err) => onErrorRef.current?.(err),
+        });
+        handleRef.current = client.startListening();
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        onErrorRef.current?.({
+          code: "network",
+          message: err instanceof Error ? err.message : "Failed to get speech token",
+        });
+      });
 
     return () => {
+      cancelled = true;
       const handle = handleRef.current;
       handleRef.current = null;
       handle?.stop();
     };
-  }, [apiKey, recording.isRecording]);
+  }, [apiKey, tokenUrl, recording.isRecording]);
 
   return recording;
 }

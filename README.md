@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Using as a library
+
+**crow-voice-layer** can be used as an NPM package or embedded locally in any React app that already has Crow. It exposes a single public API: import from `crow-voice-layer` (e.g. `VoicePanel`, `VoiceLayerProvider`, `useSendToCrow`, `useVoicePipeline`, `useTranscriptManager`, and the `CrowAdapter` type plus `sdkCrowAdapter`, `domCrowAdapter`, `getCrowAdapter`). The host app must have Tailwind (or the package’s CSS) and Crow on the page. See [implementation-guide.md](implementation-guide.md) for embedding steps, NPM vs embed options, and requirements.
+
 ## Getting Started
 
 First, run the development server:

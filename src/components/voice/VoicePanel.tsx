@@ -21,8 +21,7 @@ import {
 import { useVoicePipeline } from "@/hooks/useVoicePipeline";
 import { useTranscriptManager } from "@/hooks/useTranscriptManager";
 import { useSendToCrow } from "@/hooks/useSendToCrow";
-
-const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY ?? "";
+import { DEFAULT_DEEPGRAM_TOKEN_URL } from "@/config";
 
 /**
  * Voice panel: mic toggle, live transcript, edit, send.
@@ -42,7 +41,7 @@ export function VoicePanel() {
     toggleRecording,
     error: recordingError,
   } = useVoicePipeline({
-    apiKey: DEEPGRAM_API_KEY || undefined,
+    tokenUrl: DEFAULT_DEEPGRAM_TOKEN_URL,
     onTranscript: handleResult,
     onError: (err) => setSttError(err.message),
   });
@@ -68,11 +67,6 @@ export function VoicePanel() {
           <CardTitle>Voice command</CardTitle>
           <CardDescription>
             Speak or type, then send to Crow
-            {!DEEPGRAM_API_KEY && (
-              <span className="text-amber-600 dark:text-amber-500">
-                {" "}(Set NEXT_PUBLIC_DEEPGRAM_API_KEY for speech-to-text)
-              </span>
-            )}
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">

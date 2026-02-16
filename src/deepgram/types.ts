@@ -35,8 +35,10 @@ export interface DeepgramClientError {
 
 /** Options for createDeepgramClient. */
 export interface DeepgramClientOptions {
-  /** API key (or use token later via backend). */
-  apiKey: string;
+  /** API key. When provided, the SDK uses Token auth. Omit when using accessToken. */
+  apiKey?: string;
+  /** Short-lived JWT from token endpoint. When provided, the SDK uses Bearer auth (required for /v1/auth/grant tokens). */
+  accessToken?: string;
   /** Called for each transcript event (partial and final). */
   onTranscript: (result: DeepgramTranscriptResult) => void;
   /** Called on connection open. */

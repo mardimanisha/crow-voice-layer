@@ -60,6 +60,7 @@ export function createDeepgramClient(options: DeepgramClientOptions): {
 } {
   const {
     apiKey,
+    accessToken,
     onTranscript,
     onOpen,
     onClose,
@@ -71,9 +72,17 @@ export function createDeepgramClient(options: DeepgramClientOptions): {
     keepAliveThresholdSeconds = 8,
   } = options;
 
+  const credential = accessToken != null ? { accessToken } : apiKey != null ? apiKey : undefined;
+  if (!credential) {
+    throw new Error("createDeepgramClient requires apiKey or accessToken");
+  }
+
   return {
     startListening() {
-      const deepgram = createClient(apiKey);
+      const deepgram =
+        typeof credential === "object"
+          ? createClient(credential)
+          : createClient(credential);
       const connection = deepgram.listen.live({
         model,
         language,
