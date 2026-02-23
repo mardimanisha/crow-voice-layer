@@ -64,6 +64,22 @@ export default function Page() {
 }
 ```
 
+**Example (custom Deepgram token URL or API key):**
+
+```tsx
+import { VoicePanel, VoiceLayerProvider } from "crow-voice-layer";
+
+// Use your own token endpoint (e.g. enterprise deployment)
+<VoiceLayerProvider deepgramTokenUrl="https://my-api.example.com/deepgram-token">
+  <VoicePanel />
+</VoiceLayerProvider>
+
+// Or use your own API key (prefer server-only; avoid exposing keys to the client)
+<VoiceLayerProvider deepgramApiKey={yourApiKey}>
+  <VoicePanel />
+</VoiceLayerProvider>
+```
+
 ---
 
 ## Providing a custom Crow adapter
@@ -222,7 +238,7 @@ The `/api/deepgram-token` route includes CORS and abuse protection:
 ## Default token URL and overrides
 
 - The package exports **`DEFAULT_DEEPGRAM_TOKEN_URL`**, which points to the package maintainers’ token API (this repo deployed to Vercel). When no API key is provided, the client uses this URL to fetch a short-lived token when recording starts.
-- **Override (optional):** Host apps that run their own token endpoint can override the URL by passing **`deepgramTokenUrl`** to **`VoiceLayerProvider`** when that prop is implemented (or by passing an equivalent option into the component that configures the pipeline). Until then, the pipeline uses `DEFAULT_DEEPGRAM_TOKEN_URL` when no API key is set. The constant in the package must match the maintainers’ Vercel deployment URL; see [Deployment](#deployment-package-reference--token-api).
+- **Override (optional):** Host apps that run their own token endpoint can pass **`deepgramTokenUrl`** to **`VoiceLayerProvider`**. Hosts that prefer to use their own Deepgram API key can pass **`deepgramApiKey`** to the provider. When neither is set, the pipeline uses `DEFAULT_DEEPGRAM_TOKEN_URL` when no API key is set. The constant in the package must match the maintainers’ Vercel deployment URL; see [Deployment](#deployment-package-reference--token-api).
 
 ---
 

@@ -21,13 +21,16 @@ import {
 import { useVoicePipeline } from "@/hooks/useVoicePipeline";
 import { useTranscriptManager } from "@/hooks/useTranscriptManager";
 import { useSendToCrow } from "@/hooks/useSendToCrow";
+import { useVoiceLayerContext } from "@/context/VoiceLayerContext";
 import { DEFAULT_DEEPGRAM_TOKEN_URL } from "@/config";
 
 /**
  * Voice panel: mic toggle, live transcript, edit, send.
  * Phase B (audio) + Phase C (Deepgram STT) + Phase D (transcript manager) wired via useVoicePipeline.
+ * Uses context apiKey/tokenUrl when provided by VoiceLayerProvider; otherwise default token URL (no host key required).
  */
 export function VoicePanel() {
+  const context = useVoiceLayerContext();
   const { transcript, setTranscript, handleResult, reset } =
     useTranscriptManager();
   const [sttError, setSttError] = useState<string | undefined>(undefined);
@@ -35,13 +38,20 @@ export function VoicePanel() {
   const resetRef = useRef(reset);
   resetRef.current = reset;
 
+  const apiKey = context?.deepgramApiKey ?? undefined;
+  const tokenUrl =
+    apiKey === undefined
+      ? (context?.deepgramTokenUrl ?? DEFAULT_DEEPGRAM_TOKEN_URL)
+      : undefined;
+
   const {
     isRecording,
     isRequestingPermission,
     toggleRecording,
     error: recordingError,
   } = useVoicePipeline({
-    tokenUrl: DEFAULT_DEEPGRAM_TOKEN_URL,
+    apiKey,
+    tokenUrl,
     onTranscript: handleResult,
     onError: (err) => setSttError(err.message),
   });
