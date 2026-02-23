@@ -102,7 +102,7 @@ async function grantToken(
       expires_in?: number;
     };
     const access_token = data?.access_token;
-    const expires_in = data?.expires_in;
+    const expires_in = typeof data?.expires_in === "number" ? data.expires_in : 30;
 
     if (typeof access_token !== "string" || typeof expires_in !== "number") {
       return jsonResponse(
