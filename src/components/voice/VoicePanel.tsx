@@ -38,7 +38,11 @@ export function VoicePanel() {
   const resetRef = useRef(reset);
   resetRef.current = reset;
 
-  const apiKey = context?.deepgramApiKey ?? undefined;
+  const rawApiKey = context?.deepgramApiKey ?? undefined;
+  const apiKey =
+    typeof rawApiKey === "string" && rawApiKey.trim() !== ""
+      ? rawApiKey
+      : undefined;
   const tokenUrl =
     apiKey === undefined
       ? (context?.deepgramTokenUrl ?? DEFAULT_DEEPGRAM_TOKEN_URL)
